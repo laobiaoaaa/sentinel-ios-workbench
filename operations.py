@@ -498,5 +498,8 @@ def proxy(job,device,args):
     finally:
         terminate(proc)
         if output.exists(): job.register(output.name)
-    count=sum(1 for _ in output.open()) if output.exists() else 0
+    count=0
+    if output.exists():
+        with output.open() as flows:
+            count=sum(1 for _ in flows)
     return {'captured_flows':count,'coverage':'仅经此代理的 HTTP(S)；0 条流量不表示目标没有通信'}

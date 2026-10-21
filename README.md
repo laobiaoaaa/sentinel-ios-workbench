@@ -4,16 +4,20 @@
 
 源码仓库：[laobiaoaaa/sentinel-ios-workbench](https://github.com/laobiaoaaa/sentinel-ios-workbench)。发行包包含 `plugin.json`、`Dockerfile`、完整构建上下文和界面，插件主机从上传包现场构建，无需推送镜像。
 
-当前为源码预览，容器验收尚未完成：指定的清华 Python 镜像返回 403，等待确认可用的国内构建源。已通过的检查与尚未通过的项目见 [VALIDATION.txt](./VALIDATION.txt)；不能把源码测试通过视为 Docker 镜像已验证。
+已完成 Linux amd64 / Docker / Python 3.12 的构建与隔离验收，包括 MCP、SSH 转发、真实代理抓改包、UI 资源和退出清理。具体检查和环境边界见 [VALIDATION.txt](./VALIDATION.txt)。尚未完成本插件的 iPhone 真机及目标 App 兼容验收。
 
 ## 构建和安装
+
+从 [Releases](https://github.com/laobiaoaaa/sentinel-ios-workbench/releases) 下载 `sentinel-ios-workbench-0.1.0.zip`，在哨兵“设置 → 插件 → 上传插件包”选择它，确认清单并勾选允许 Dockerfile 构建。安装后打开“苹果测试”界面，保存 SSH 配置，等待容器重建后连接设备。给会话启用本插件的工具权限后，模型也可直接调用这 19 个工具。
+
+手动构建调试：
 
 ```
 docker build -t sentinel-plugin/local.sentinel.ios-workbench:0.1.0 .
 docker run --rm -p 127.0.0.1:7801:7801 -v ios-plugin-data:/data -v ios-plugin-artifacts:/artifacts sentinel-plugin/local.sentinel.ios-workbench:0.1.0
 ```
 
-插件主机安装时自动完成同类构建和容器生命周期。基础镜像使用 docker.1ms.run；Python 依赖默认清华源。构建参数 PIP_INDEX_URL 可以由 manifest 的 build.args 传入获准使用的国内镜像。依赖都装在容器内。
+插件主机安装时自动完成同类构建和容器生命周期。基础镜像使用 docker.1ms.run；Python 依赖使用已获准的阿里云国内镜像。构建参数 PIP_INDEX_URL 在 manifest 的 build.args 中明确给出，也可传入其他获准使用的国内镜像。依赖都装在容器内；bcrypt 固定为 4.0.1，避免 mitmproxy 11 使用的 passlib 与 bcrypt 5 不兼容而无法启动。
 
 插件健康检查不要求手机在线。GET /healthz、POST /mcp，以及 /ui/* 由同一个 0.0.0.0:7801 HTTP 服务提供。UI 使用官方 v2.1.6 SDK 和基础 CSS；无外网请求、Cookie、localStorage 或 /api 私有接口。
 

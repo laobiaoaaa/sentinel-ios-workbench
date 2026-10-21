@@ -1,41 +1,53 @@
-Validation status — 2026-10-22
+Validation — version 0.1.0 — 2026-10-22
 
-This is the source preview of version 0.1.0. Container acceptance is NOT complete.
+Environment and scope
+- Docker on a Linux amd64 host; supplied Dockerfile and bundled source context.
+- python:3.12-slim-bookworm from docker.1ms.run; Python 3.12.15 in the tested image.
+- Python packages from the explicitly approved Aliyun domestic mirror.
+- Tests used isolated containers and loopback SSH/HTTP fixtures. The existing
+  Sentinel service was not restarted or replaced. No production target scanned.
 
-Passed against the current production source:
-- Official Sentinel v2.1.6 manifest parser: valid manifest, 19 declared tools.
-- 30 SSH/device tests using Paramiko 3.5.1 and real loopback SSH/SFTP/forwarding.
-  Includes a peer that withholds cancel-tcpip-forward replies, bounded cleanup,
-  host-key rejection before authentication, and explicit-password recovery from
-  an invalid private key or wrong private-key passphrase.
-- 17 static-package/Mach-O tests.
-- 14 dump validation tests with synthetic Mach-O data and mocked Frida.
-  These validate file mapping and cleanup logic, not iOS injection compatibility.
-- 7 API tests against real loopback HTTP origins, including independent cookies,
-  POST Content-Type/body preservation, case-insensitive identity overrides,
-  redirect restrictions, response truncation and invalid-header rejection before
-  any request. Run with Python 3.13/httpx 0.28.1; SSH/static/dump used Python 3.14.
-- 31 UI event tests, including actual SDK call arguments, method/body/base_headers,
-  upload cancellation, unsafe input rejection and official SDK/base CSS identity.
-- 6 Hook script tests executing hooks.js with a simulated Frida API; these cover
-  actual byte replacement, capture limits and accurate mutation event semantics.
+Passed
+- Official Sentinel v2.1.6 manifest parser: valid, 19 tools, source repository set.
+- Actual docker build, dependency imports, mitmdump 11.0.2 startup/version output.
+- Both isolated Frida Python runtimes import: 17.2.17 and 16.7.19.
+- Container Python suite: 80 discovered, 79 passed, 1 skipped because the runtime
+  image intentionally has no Node (Node is not needed by the plugin at runtime).
+  The skipped case executes the embedded dump JavaScript against binary fixtures;
+  all 14 dump tests, including that case, passed separately with Python and Node.
+- SSH fixtures cover actual authentication, SFTP, direct/reverse forwarding,
+  host-key rejection before authentication, bounded cleanup when the peer omits
+  cancel-forward replies, and password fallback only when explicitly configured.
+- Real mitmdump + reverse SSH + HTTP origin integration covers capture, request
+  and response mutation, rule clearing, oversized/streaming response handling,
+  natural completion, cancellation and tunnel/process cleanup.
+- HTTP API tests cover POST method/Content-Type/body preservation, baseline and
+  identity header merging, independent cookie jars, redirects, truncation and
+  rejection of invalid headers before any network request.
+- MCP HTTP tests include initialization, tools/list, tools/call, notifications,
+  errors as MCP results, IPA chunk import/analysis/artifacts, cancellation and
+  interrupted state after restart.
+- 31 UI event tests verify actual SDK arguments and UI state transitions.
+  Official SDK/base CSS byte identity, safe rendering and overflow checks pass.
+- 6 Hook tests execute production hooks.js against a simulated Frida API,
+  covering actual byte replacement and accurate sampling/mutation evidence.
+- Container smoke checks: health within the 20-second deadline, 19 live tools,
+  actual tool execution, offline/error state, all six UI resources GET/HEAD,
+  traversal and direct-browser-origin rejection, clean exit without OOM.
 
-Pending before a container-verified release:
-- Build the supplied Dockerfile with pinned Python 3.12 dependencies.
-- Run the complete Python suite inside that image, including MCP HTTP and real
-  mitmproxy integration; verify both embedded Frida Python imports.
-- Run container health/MCP/UI smoke tests and check shutdown.
+Resolved during acceptance
+- TUNA returned HTTP 403; the user approved Aliyun and both Dockerfile default
+  and manifest build.args now use it. No direct PyPI fallback.
+- mitmproxy/passlib failed with bcrypt 5.0.0; requirements pin bcrypt 4.0.1.
+- Proxy flow-count reader now closes its file explicitly.
+- The smoke fixture was corrected to distinguish offline cached status from an
+  explicit refresh: refresh on an unconnected device correctly returns an error.
 
-Current build blocker:
-The user-specified https://pypi.tuna.tsinghua.edu.cn/simple mirror returns HTTP 403.
-The Dockerfile still preserves that required source. An alternate domestic mirror
-has not been approved yet; no silent mirror change or direct pypi.org fallback was
-introduced. The base image from docker.1ms.run has been pulled successfully.
-
-Earlier system-Python checks encountered httpcore/Python 3.14 and mitmdump/OpenSSL
-dependency incompatibilities. They do not establish the result of the pinned
-Python 3.12 image; do not label them fixed until the image is built and tested.
-
-No real iPhone, target application or external API was tested in this validation.
-Runtime probes and successful SSH do not guarantee Frida attach/injection on every
-iOS/jailbreak/App version. All reported capabilities retain their actual limits.
+Not verified / do not infer
+- No real iPhone, target App, jailbreak, Frida injection, runtime decryption or
+  target API was exercised. Dump/Hook fixtures do not establish device support.
+- No completed install or rendered iframe test inside the live Sentinel console.
+  Contract validation uses its unmodified v2.1.6 parser and official SDK.
+- Only Linux amd64 Docker was built; ARM64 container compatibility is unverified.
+- Successful runtime probing is not an assurance of attachment on every App.
+  See README for capture, encryption, dump and jailbreak capability limits.

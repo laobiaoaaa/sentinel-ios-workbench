@@ -9,7 +9,10 @@
   "license": "MIT",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "."
+    "context": ".",
+    "args": {
+      "PIP_INDEX_URL": "https://mirrors.aliyun.com/pypi/simple/"
+    }
   },
   "mcp": {
     "transport": "http",

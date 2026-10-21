@@ -1,5 +1,5 @@
 FROM docker.1ms.run/library/python:3.12-slim-bookworm
-ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ARG PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=7801
 WORKDIR /app
 COPY requirements.txt ./

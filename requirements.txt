@@ -2,3 +2,5 @@ paramiko==3.5.1
 httpx==0.28.1
 jsonschema==4.25.1
 mitmproxy==11.0.2
+# mitmproxy 11 uses passlib 1.7; newer bcrypt breaks its backend self-test.
+bcrypt==4.0.1
