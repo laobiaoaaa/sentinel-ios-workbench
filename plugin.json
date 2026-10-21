@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "id": "local.sentinel.ios-workbench",
+  "name": "iOS 专项测试工作台",
+  "version": "0.1.0",
+  "description": "通过插件自身 SSH 接入苹果设备，提供应用静态分析、Frida Hook、运行时模块导出、代理抓改包和接口身份对比；独立任务与证据目录。",
+  "author": "github:laobiaoaaa",
+  "source": "https://github.com/laobiaoaaa/sentinel-ios-workbench",
+  "license": "MIT",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "mcp": {
+    "transport": "http",
+    "port": 7801,
+    "path": "/mcp",
+    "startupTimeoutMs": 20000,
+    "requestTimeoutMs": 300000
+  },
+  "config": [
+    {
+      "key": "SSH_HOST",
+      "label": "苹果设备 SSH 地址",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "SSH_PORT",
+      "label": "SSH 端口",
+      "type": "number",
+      "required": false,
+      "default": 22
+    },
+    {
+      "key": "SSH_USER",
+      "label": "SSH 用户名",
+      "type": "string",
+      "required": false,
+      "default": "root"
+    },
+    {
+      "key": "SSH_PASSWORD",
+      "label": "SSH 密码",
+      "type": "secret",
+      "required": false
+    },
+    {
+      "key": "SSH_PRIVATE_KEY",
+      "label": "SSH 私钥（PEM，可选）",
+      "type": "secret",
+      "required": false
+    },
+    {
+      "key": "SSH_KEY_PASSPHRASE",
+      "label": "私钥口令（可选）",
+      "type": "secret",
+      "required": false
+    },
+    {
+      "key": "SSH_FINGERPRINT",
+      "label": "固定主机指纹（SHA256，可选；首次连接自动记录）",
+      "type": "string",
+      "required": false
+    },
+    {
+      "key": "FRIDA_PORT",
+      "label": "设备端 Frida 端口",
+      "type": "number",
+      "required": false,
+      "default": 27042
+    }
+  ],
+  "permissions": {
+    "network": "bridge",
+    "capAdd": [],
+    "privileged": false
+  },
+  "locality": "any",
+  "resources": {
+    "cpus": 1.5,
+    "memory": "1g",
+    "pidsLimit": 128
+  },
+  "healthcheck": {
+    "path": "/healthz",
+    "intervalMs": 10000,
+    "timeoutMs": 3000,
+    "retries": 3
+  },
+  "artifacts": {
+    "path": "/artifacts",
+    "maxFileBytes": 52428800
+  },
+  "tools": [
+    {
+      "name": "ios_device_probe",
+      "description": "读取配置设备的 SSH 主机指纹，不发送密码；用于核对或诊断连接。"
+    },
+    {
+      "name": "ios_device_connect",
+      "description": "通过插件自身 SSH 连接设备，自动首次记录主机密钥、读取设备信息和工具能力；主机密钥变化拒绝连接。"
+    },
+    {
+      "name": "ios_device_status",
+      "description": "读取设备在线状态；refresh=true 执行真实在线检测，不把历史缓存当在线。"
+    },
+    {
+      "name": "ios_device_disconnect",
+      "description": "断开本插件 SSH；运行任务须先停止，不操作平台旧设备页面。"
+    },
+    {
+      "name": "ios_apps_list",
+      "description": "通过 SSH/SFTP 分页列出设备应用及 Bundle ID。先连接设备。"
+    },
+    {
+      "name": "ios_test_start",
+      "description": "启动 iOS 客户端静态分析/网络观察任务。client=静态+网络；backend=网络观察并整理接口；combined=两者。返回 job_id 后用 ios_job_status 取进度。接口主动验证另用 ios_api_check；不能把候选当漏洞。"
+    },
+    {
+      "name": "ios_hook_start",
+      "description": "实际通过 SSH 隧道运行 Frida Hook。network观察请求/支持的TLS函数，crypto观察CommonCrypto，storage观察文件/Keychain调用。自动选择可连接的内置Frida运行时。crypto可选进程内CCCrypt加密输入的等UTF-8字节长度替换，不证明网络请求已修改；无密钥采集。"
+    },
+    {
+      "name": "ios_dump_start",
+      "description": "拷贝应用并通过 Frida 导出已加载模块的加密区域，校验剩余加密组件；大IPA按48MiB分片。需设备端可用Frida，不等于恢复源码或可重签安装。"
+    },
+    {
+      "name": "ios_proxy_start",
+      "description": "启动真实 mitmproxy 抓改包服务和设备 localhost SSH 反向隧道。返回任务connection信息；设备/App需使用代理并按需信任CA。不会假称已自动配置设备或绕过固定证书。"
+    },
+    {
+      "name": "ios_proxy_rules_set",
+      "description": "对正在运行的代理设置明确URL匹配的请求头/请求体/响应体替换规则，空数组清除。"
+    },
+    {
+      "name": "ios_api_check",
+      "description": "对指定HTTP(S)接口发送基线与可选两身份请求。base_headers用于所有请求的通用头，身份头分别用headers/compare_headers覆盖；方法与body共用。基线头、URL、body中身份字段需由调用者清除才是匿名；响应相似不自动判为越权，不跟随重定向，不保存请求头。"
+    },
+    {
+      "name": "ios_package_import_start",
+      "description": "开始通过工具分片导入IPA，不依赖宿主路径或私有上传接口。"
+    },
+    {
+      "name": "ios_package_import_chunk",
+      "description": "追加IPA分片。offset必须等于已接收字节数，data_base64解码后最多256KiB。"
+    },
+    {
+      "name": "ios_package_import_finish",
+      "description": "校验IPA接收长度并启动静态分析任务。"
+    },
+    {
+      "name": "ios_package_import_cancel",
+      "description": "删除未完成的上传文件。"
+    },
+    {
+      "name": "ios_job_status",
+      "description": "查询一个任务的阶段、真实结果/失败原因和产物路径。"
+    },
+    {
+      "name": "ios_jobs_list",
+      "description": "分页列出本插件保留的任务摘要。详细结果使用 ios_job_status。"
+    },
+    {
+      "name": "ios_job_stop",
+      "description": "停止任务并清理本插件的Hook/代理/隧道；不终止设备应用。"
+    },
+    {
+      "name": "ios_job_delete",
+      "description": "删除已结束任务及其产物，释放插件空间。"
+    }
+  ],
+  "ui": {
+    "entry": "/ui/index.html",
+    "title": "iOS 专项测试",
+    "protocol": 1,
+    "sidebar": {
+      "label": "苹果测试",
+      "icon": "/ui/icon.svg"
+    }
+  }
+}

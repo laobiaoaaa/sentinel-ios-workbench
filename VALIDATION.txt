@@ -1,0 +1,41 @@
+Validation status — 2026-10-22
+
+This is the source preview of version 0.1.0. Container acceptance is NOT complete.
+
+Passed against the current production source:
+- Official Sentinel v2.1.6 manifest parser: valid manifest, 19 declared tools.
+- 30 SSH/device tests using Paramiko 3.5.1 and real loopback SSH/SFTP/forwarding.
+  Includes a peer that withholds cancel-tcpip-forward replies, bounded cleanup,
+  host-key rejection before authentication, and explicit-password recovery from
+  an invalid private key or wrong private-key passphrase.
+- 17 static-package/Mach-O tests.
+- 14 dump validation tests with synthetic Mach-O data and mocked Frida.
+  These validate file mapping and cleanup logic, not iOS injection compatibility.
+- 7 API tests against real loopback HTTP origins, including independent cookies,
+  POST Content-Type/body preservation, case-insensitive identity overrides,
+  redirect restrictions, response truncation and invalid-header rejection before
+  any request. Run with Python 3.13/httpx 0.28.1; SSH/static/dump used Python 3.14.
+- 31 UI event tests, including actual SDK call arguments, method/body/base_headers,
+  upload cancellation, unsafe input rejection and official SDK/base CSS identity.
+- 6 Hook script tests executing hooks.js with a simulated Frida API; these cover
+  actual byte replacement, capture limits and accurate mutation event semantics.
+
+Pending before a container-verified release:
+- Build the supplied Dockerfile with pinned Python 3.12 dependencies.
+- Run the complete Python suite inside that image, including MCP HTTP and real
+  mitmproxy integration; verify both embedded Frida Python imports.
+- Run container health/MCP/UI smoke tests and check shutdown.
+
+Current build blocker:
+The user-specified https://pypi.tuna.tsinghua.edu.cn/simple mirror returns HTTP 403.
+The Dockerfile still preserves that required source. An alternate domestic mirror
+has not been approved yet; no silent mirror change or direct pypi.org fallback was
+introduced. The base image from docker.1ms.run has been pulled successfully.
+
+Earlier system-Python checks encountered httpcore/Python 3.14 and mitmdump/OpenSSL
+dependency incompatibilities. They do not establish the result of the pinned
+Python 3.12 image; do not label them fixed until the image is built and tested.
+
+No real iPhone, target application or external API was tested in this validation.
+Runtime probes and successful SSH do not guarantee Frida attach/injection on every
+iOS/jailbreak/App version. All reported capabilities retain their actual limits.

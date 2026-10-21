@@ -1,0 +1,414 @@
+/*
+ * 哨兵插件界面的基础样式。
+ *
+ * 复制到插件的 /ui/ 目录，在 index.html 里用相对路径引入：
+ *   <link rel="stylesheet" href="./base.css" />
+ * 然后只用下面的 class 组织页面，不要再各写一套字体和颜色。
+ * 插件界面运行在 sandbox iframe 里，看不到控制台的全局样式，所以这份文件
+ * 是唯一的视觉基线。
+ */
+
+:root {
+	color-scheme: light;
+	--pui-bg: #fafafa;
+	--pui-card: #ffffff;
+	--pui-border: #ebedf0;
+	--pui-raised: #f5f6f7;
+	--pui-text: #1f2329;
+	--pui-dim: #646a73;
+	--pui-muted: #8f959e;
+	--pui-accent: #0960bd;
+	--pui-accent-soft: #e8f3ff;
+	--pui-ok: #529b2e;
+	--pui-ok-soft: #f0f9eb;
+	--pui-danger: #c45656;
+	--pui-danger-soft: #fef0f0;
+	--pui-radius: 6px;
+	--pui-mono: SFMono-Regular, Menlo, Consolas, monospace;
+	--pui-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--pui-bg);
+	color: var(--pui-text);
+	font: 13px/1.6 var(--pui-sans);
+}
+
+/* 页面容器：左右内边距与控制台浮层头部一致（16px），上下留 16/28px。 */
+.pui-page {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 16px 16px 28px;
+}
+
+.pui-bar {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 14px;
+}
+
+.pui-bar h1 {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.pui-sub {
+	margin: 3px 0 0;
+	color: var(--pui-muted);
+	font-size: 12px;
+}
+
+.pui-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pui-grid {
+	display: grid;
+	gap: 12px;
+}
+
+.pui-grid--2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 860px) {
+	.pui-grid--2 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.pui-card {
+	padding: 14px;
+	border: 1px solid var(--pui-border);
+	border-radius: var(--pui-radius);
+	background: var(--pui-card);
+}
+
+.pui-card + .pui-card {
+	margin-top: 12px;
+}
+
+/* A grid is not a card, so the sibling rule above misses the card that follows
+   one: without this the grid and the next card touch with no gap. */
+.pui-grid + .pui-card {
+	margin-top: 12px;
+}
+
+.pui-card--flush {
+	padding: 0;
+	overflow: hidden;
+}
+
+.pui-card--flush .pui-card-head,
+.pui-card--flush > h2 {
+	padding: 12px 14px 0;
+}
+
+.pui-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 10px;
+}
+
+.pui-card-head h2,
+.pui-card > h2 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.pui-card-head h2 {
+	margin-bottom: 0;
+}
+
+.pui-card-head + * {
+	margin-top: 10px;
+}
+
+.pui-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.pui-btn {
+	height: 30px;
+	padding: 0 12px;
+	border: 1px solid var(--pui-border);
+	border-radius: 6px;
+	background: var(--pui-card);
+	color: var(--pui-text);
+	font-family: var(--pui-sans);
+	font-size: 12.5px;
+	cursor: pointer;
+}
+
+.pui-btn:hover:not(:disabled) {
+	border-color: var(--pui-accent);
+	color: var(--pui-accent);
+}
+
+.pui-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.pui-btn.primary {
+	border-color: var(--pui-accent);
+	background: var(--pui-accent);
+	color: #fff;
+}
+
+.pui-btn.primary:hover:not(:disabled) {
+	background: #0b6fd4;
+	border-color: #0b6fd4;
+	color: #fff;
+}
+
+.pui-btn.danger {
+	border-color: #f3c9c9;
+	color: var(--pui-danger);
+}
+
+.pui-btn.ghost {
+	border-color: transparent;
+	background: transparent;
+	color: var(--pui-dim);
+}
+
+.pui-btn.ghost:hover:not(:disabled) {
+	background: var(--pui-raised);
+	color: var(--pui-text);
+}
+
+.pui-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+
+.pui-label {
+	color: var(--pui-dim);
+	font-size: 12px;
+}
+
+.pui-input,
+.pui-select,
+.pui-textarea {
+	width: 100%;
+	min-height: 32px;
+	padding: 6px 10px;
+	border: 1px solid #d9dce0;
+	border-radius: 6px;
+	background: #fff;
+	color: var(--pui-text);
+	font-family: var(--pui-sans);
+	font-size: 12.5px;
+	outline: none;
+}
+
+.pui-textarea {
+	min-height: 88px;
+	resize: vertical;
+	font-family: var(--pui-mono);
+	font-size: 12px;
+}
+
+.pui-input:focus,
+.pui-select:focus,
+.pui-textarea:focus {
+	border-color: var(--pui-accent);
+	box-shadow: 0 0 0 2px var(--pui-accent-soft);
+}
+
+.pui-hint {
+	margin: 8px 0 0;
+	color: var(--pui-muted);
+	font-size: 11.5px;
+	line-height: 1.7;
+}
+
+.pui-kv {
+	display: grid;
+	grid-template-columns: 76px minmax(0, 1fr);
+	gap: 7px 12px;
+	margin: 0;
+	font-size: 12.5px;
+}
+
+.pui-kv dt {
+	color: var(--pui-muted);
+}
+
+.pui-kv dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.pui-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 22px;
+	padding: 0 9px;
+	border-radius: 11px;
+	background: var(--pui-raised);
+	color: var(--pui-muted);
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.pui-pill::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	opacity: 0.7;
+}
+
+.pui-pill.ok {
+	background: var(--pui-ok-soft);
+	color: var(--pui-ok);
+}
+
+.pui-pill.bad {
+	background: var(--pui-danger-soft);
+	color: var(--pui-danger);
+}
+
+.pui-pill.plain::before {
+	display: none;
+}
+
+.pui-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12.5px;
+}
+
+.pui-table th {
+	padding: 8px 12px;
+	border-top: 1px solid var(--pui-border);
+	border-bottom: 1px solid var(--pui-border);
+	background: #f8f9fa;
+	color: var(--pui-muted);
+	font-size: 11.5px;
+	font-weight: 600;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.pui-table td {
+	padding: 9px 12px;
+	border-bottom: 1px solid var(--pui-border);
+	vertical-align: middle;
+}
+
+.pui-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.pui-table tbody tr:hover {
+	background: #fafcff;
+}
+
+.pui-table .num {
+	text-align: right;
+}
+
+.pui-table .mono {
+	font-family: var(--pui-mono);
+	font-size: 11.5px;
+}
+
+.pui-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pui-list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 7px 10px;
+	border: 1px solid var(--pui-border);
+	border-radius: 6px;
+	background: #fcfcfd;
+	font-size: 12px;
+}
+
+.pui-empty {
+	padding: 26px 14px;
+	color: var(--pui-muted);
+	font-size: 12px;
+	text-align: center;
+}
+
+/* An empty state is often the only child of .pui-list; the list-row chrome
+   would otherwise draw it as a bordered bar instead of a centered message. */
+.pui-list li.pui-empty {
+	display: block;
+	padding: 26px 14px;
+	border: 0;
+	background: transparent;
+	text-align: center;
+}
+
+.pui-output {
+	margin: 0;
+	padding: 10px 12px;
+	max-height: 320px;
+	overflow: auto;
+	border-radius: 6px;
+	background: #0b0f14;
+	color: #c9d1d9;
+	font: 11.5px/1.65 var(--pui-mono);
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.pui-check {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--pui-dim);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.pui-check input {
+	margin: 0;
+}
+
+.pui-sep {
+	width: 1px;
+	height: 18px;
+	background: var(--pui-border);
+}

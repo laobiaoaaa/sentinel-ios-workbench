@@ -1,0 +1,26 @@
+/* Layout only: visual typography and colors come from the official base.css. */
+[hidden] { display: none !important; }
+.ios-toolbar { align-items: center; flex-wrap: wrap; }
+.ios-notice { margin: 0 0 12px; overflow-wrap: anywhere; }
+.pui-grid > .pui-card { min-width: 0; margin-top: 0; }
+.ios-section { margin-top: 12px; }
+.ios-details { margin-top: 12px; }
+.ios-details summary { cursor: pointer; margin-bottom: 8px; }
+.ios-probe { margin-top: 12px; }
+.ios-probe .pui-btn { margin-top: 8px; }
+.ios-api-request { align-items: flex-end; }
+.ios-api-method { flex: 0 0 120px; min-width: 0; }
+.ios-api-url { flex: 1 1 240px; min-width: 0; }
+.ios-table-wrap { max-width: 100%; overflow-x: auto; }
+.ios-apps-table { min-width: 680px; }
+.ios-jobs-table { min-width: 640px; }
+.pui-table td { overflow-wrap: anywhere; }
+.pui-table td:last-child { max-width: 320px; }
+.pui-list li > span { min-width: 0; overflow-wrap: anywhere; }
+.pui-list .pui-btn { flex-shrink: 0; }
+.pui-output { max-width: 100%; }
+@media (max-width: 480px) {
+  .pui-page { padding: 12px 10px 20px; }
+  .pui-card { padding: 12px; }
+  .pui-card-head { flex-wrap: wrap; }
+}

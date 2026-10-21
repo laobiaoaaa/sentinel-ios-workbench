@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>iOS 设备工作台</title>
+  <link rel="stylesheet" href="./base.css" />
+  <link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+  <main class="pui-page">
+    <div class="pui-bar ios-toolbar" role="toolbar" aria-label="设备操作">
+      <div class="pui-actions">
+        <button id="device-connect" type="button" class="pui-btn primary" disabled>连接设备</button>
+        <button id="device-refresh" type="button" class="pui-btn" disabled>刷新状态</button>
+        <button id="device-disconnect" type="button" class="pui-btn" disabled>断开</button>
+        <label class="pui-check"><input id="device-poll" type="checkbox" disabled />每 10 秒刷新状态</label>
+      </div>
+      <span id="device-status" class="pui-pill">尚未连接设备</span>
+    </div>
+    <p id="notice" class="pui-hint ios-notice" role="status" aria-live="polite">正在读取插件配置…</p>
+
+    <div class="pui-grid pui-grid--2">
+      <section class="pui-card">
+        <div class="pui-card-head"><h2>苹果设备 SSH 配置</h2><button id="config-reload" type="button" class="pui-btn ghost" disabled>重新读取</button></div>
+        <div class="pui-grid pui-grid--2">
+          <label class="pui-field"><span class="pui-label">设备地址</span><input id="ssh-host" class="pui-input" placeholder="192.168.1.100" autocomplete="off" /></label>
+          <label class="pui-field"><span class="pui-label">SSH 端口</span><input id="ssh-port" class="pui-input" type="number" min="1" max="65535" value="22" /></label>
+          <label class="pui-field"><span class="pui-label">SSH 用户</span><input id="ssh-user" class="pui-input" value="root" autocomplete="off" /></label>
+          <label class="pui-field"><span class="pui-label">SSH 密码 · 留空保留</span><input id="ssh-password" class="pui-input" type="password" autocomplete="new-password" placeholder="只写不读，留空不提交" /></label>
+        </div>
+        <label class="pui-field"><span class="pui-label">SSH 私钥 · 留空保留</span><textarea id="ssh-private-key" class="pui-textarea" rows="3" autocomplete="off" spellcheck="false" placeholder="粘贴私钥，留空不提交"></textarea></label>
+        <label class="pui-field"><span class="pui-label">私钥口令 · 留空保留</span><input id="ssh-passphrase" class="pui-input" type="password" autocomplete="new-password" placeholder="只写不读，留空不提交" /></label>
+        <label class="pui-field"><span class="pui-label">SSH 主机指纹（可选）</span><input id="ssh-fingerprint" class="pui-input" autocomplete="off" placeholder="可预填通过可信渠道核对的 SHA256 指纹" /></label>
+        <div class="pui-row">
+          <button id="config-save" type="button" class="pui-btn primary" disabled>保存配置并重建</button>
+          <button id="device-probe" type="button" class="pui-btn" disabled>可选：读取设备指纹</button>
+        </div>
+        <p class="pui-hint">配置独立于安卓设备。保存会重建插件容器并中断界面；请先停止任务，保存后使用宿主“重载”。密钥只交给配置桥，不写入界面存储。</p>
+        <p id="secret-state" class="pui-hint"></p>
+        <div id="probe-panel" class="ios-probe" hidden>
+          <pre id="probe-result" class="pui-output"></pre>
+          <button id="fingerprint-use" type="button" class="pui-btn" disabled>已独立核对，填入此指纹</button>
+          <p class="pui-hint">请通过设备端或可信渠道核对；填入后仍需保存配置、重载界面，再连接。</p>
+        </div>
+      </section>
+      <section class="pui-card">
+        <h2>设备状态与可用能力</h2>
+        <dl class="pui-kv">
+          <dt>设备状态</dt><dd id="device-online">尚未检查</dd>
+          <dt>最后检查</dt><dd id="device-time">—</dd>
+          <dt>当前配置</dt><dd id="device-target">—</dd>
+          <dt>当前应用</dt><dd id="selected-app">尚未选择</dd>
+        </dl>
+        <p class="pui-hint">打开界面不会连接真实设备或启动测试。保存地址后可直接点击连接；首次连接记录主机密钥，以后密钥变化会拒绝连接，也可预填已核对的指纹。连接成功后默认每 10 秒刷新，可随时暂停。</p>
+        <details class="ios-details" open><summary>系统信息与能力详情</summary><pre id="device-info" class="pui-output">等待手动连接或刷新…</pre></details>
+      </section>
+    </div>
+
+    <section class="pui-card">
+      <div class="pui-card-head"><h2>应用列表</h2><button id="apps-refresh" type="button" class="pui-btn" disabled>读取应用</button></div>
+      <label class="pui-field"><span class="pui-label">筛选名称或 Bundle ID</span><input id="apps-filter" class="pui-input" type="search" placeholder="输入关键词筛选已读取的应用" /></label>
+      <div class="ios-table-wrap" tabindex="0" role="region" aria-label="应用列表，可横向滚动">
+        <table class="pui-table ios-apps-table"><thead><tr><th scope="col">选择</th><th scope="col">名称</th><th scope="col">Bundle ID</th></tr></thead><tbody id="apps-body"></tbody></table>
+      </div>
+      <p id="apps-count" class="pui-hint">尚未读取应用。</p>
+    </section>
+
+    <div class="pui-grid pui-grid--2 ios-section">
+      <section class="pui-card">
+        <h2>客户端分析与 Hook 观察</h2>
+        <div class="pui-grid pui-grid--2">
+          <label class="pui-field"><span class="pui-label">分析模式</span><select id="test-mode" class="pui-select"><option value="client">客户端分析</option><option value="backend">后端线索分析</option><option value="combined">客户端 + 后端线索</option></select></label>
+          <label class="pui-field"><span class="pui-label">观察时长（秒）</span><input id="test-duration" class="pui-input" type="number" min="5" max="600" value="30" /></label>
+        </div>
+        <div class="pui-row"><button id="test-start" type="button" class="pui-btn primary" disabled>启动分析</button><button id="dump-start" type="button" class="pui-btn" disabled>导出应用包</button></div>
+        <p class="pui-hint">以上操作使用当前选中应用。观察期间请在设备上实际操作；缺少环境能力或未观察到事件时，以任务结果为准。</p>
+        <label class="pui-field ios-section"><span class="pui-label">Hook 观察范围</span><select id="hook-profile" class="pui-select"><option value="network">网络请求</option><option value="crypto">加解密调用</option><option value="storage">本地存储</option></select></label>
+        <label class="pui-check"><input id="hook-replace" type="checkbox" />在 crypto 模式中启用文本替换</label>
+        <div id="hook-replace-fields" class="pui-grid pui-grid--2 ios-section" hidden>
+          <label class="pui-field"><span class="pui-label">匹配原文（UTF-8）</span><input id="hook-from" class="pui-input" autocomplete="off" /></label>
+          <label class="pui-field"><span class="pui-label">替换文本（UTF-8 等字节长度）</span><input id="hook-to" class="pui-input" autocomplete="off" /></label>
+        </div>
+        <p class="pui-hint">默认仅观察。替换需要明确勾选、选择 crypto，并填写等字节长度的原文和新文本。</p>
+        <button id="hook-start" type="button" class="pui-btn" disabled>启动 Hook 观察</button>
+      </section>
+      <section class="pui-card">
+        <h2>流量代理</h2>
+        <label class="pui-field"><span class="pui-label">代理运行时长（5–600 秒）</span><input id="proxy-duration" class="pui-input" type="number" min="5" max="600" value="120" /></label>
+        <label class="pui-check"><input id="proxy-reverse" type="checkbox" checked disabled />通过 SSH 反向转发（固定）</label>
+        <div class="pui-row ios-section"><button id="proxy-start" type="button" class="pui-btn primary" disabled>启动代理任务</button></div>
+        <p class="pui-hint">启动后请在任务详情查看实际监听地址、端口和转发结果。设备需要手动设置可达的代理；HTTPS 还需安装并信任对应 CA。证书锁定、未走代理的连接可能无法捕获，不代表自动获得全部流量。</p>
+        <label class="pui-field ios-section"><span class="pui-label">当前代理任务的改写规则（JSON 数组）</span><textarea id="proxy-rules" class="pui-textarea" rows="4" spellcheck="false">[]</textarea></label>
+        <button id="proxy-rules-save" type="button" class="pui-btn" disabled>应用到当前任务</button>
+        <p class="pui-hint">先选择已进入 capturing 阶段的代理任务。每条规则必须有 8–2048 字符的 url_contains，可含 request_headers、request_body、response_body；最多 20 条。应用后修改匹配流量，空数组清除规则。</p>
+      </section>
+      <section class="pui-card">
+        <h2>接口验证</h2>
+        <div class="pui-row ios-api-request">
+          <label class="pui-field ios-api-method"><span class="pui-label">请求方法</span><select id="api-method" class="pui-select"><option value="GET">GET</option><option value="HEAD">HEAD</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="PATCH">PATCH</option><option value="DELETE">DELETE</option></select></label>
+          <label class="pui-field ios-api-url"><span class="pui-label">HTTP(S) 接口地址</span><input id="api-url" class="pui-input" type="url" placeholder="https://example.test/api/profile" autocomplete="off" /></label>
+        </div>
+        <label class="pui-field"><span class="pui-label">通用请求头（JSON 对象，各样本共用，例如 Content-Type）</span><textarea id="api-base-headers" class="pui-textarea" rows="3" spellcheck="false" autocomplete="off">{}</textarea></label>
+        <label class="pui-field"><span class="pui-label">请求正文（可选，最多 65536 个字符，按原文发送）</span><textarea id="api-body" class="pui-textarea" rows="4" spellcheck="false" autocomplete="off" aria-describedby="api-request-hint"></textarea></label>
+        <label class="pui-field"><span class="pui-label">可选身份 A 请求头（JSON 对象，空对象表示跳过）</span><textarea id="api-headers" class="pui-textarea" rows="3" spellcheck="false">{}</textarea></label>
+        <label class="pui-field"><span class="pui-label">可选身份 B 请求头（JSON 对象，空对象表示跳过）</span><textarea id="api-compare" class="pui-textarea" rows="3" spellcheck="false">{}</textarea></label>
+        <button id="api-start" type="button" class="pui-btn primary" disabled>执行接口验证</button>
+        <p id="api-request-hint" class="pui-hint">基线仅使用通用请求头；每组非空身份头会额外发送一次请求，并覆盖对应通用头。基线与身份对照使用相同方法、URL 和正文。身份凭据请放在对应身份头中；界面不会自动清除通用头、URL 或正文中的身份参数，不能自动将基线称为匿名请求。请仅填写本次有权验证的接口；响应差异不能单独作为越权结论。</p>
+      </section>
+      <section class="pui-card">
+        <div class="pui-card-head"><h2>当前任务详情</h2><span id="job-state" class="pui-pill">未选择</span></div>
+        <dl class="pui-kv"><dt>任务 ID</dt><dd id="job-id">—</dd><dt>阶段</dt><dd id="job-stage">—</dd></dl>
+        <div class="pui-row ios-section">
+          <button id="job-refresh" type="button" class="pui-btn" disabled>刷新当前任务</button>
+          <button id="job-stop" type="button" class="pui-btn danger" disabled>停止当前任务</button>
+          <label class="pui-check"><input id="job-poll" type="checkbox" disabled />每 3 秒更新任务</label>
+        </div>
+        <p id="job-hint" class="pui-hint">启动任务后可手动刷新，或显式开启任务轮询。关闭轮询不会停止后台任务。</p>
+        <pre id="job-detail" class="pui-output ios-section">尚未选择任务。</pre>
+        <ul id="job-artifacts" class="pui-list ios-section"></ul>
+      </section>
+    </div>
+
+    <section class="pui-card">
+      <h2>IPA 文件静态分析</h2>
+      <label class="pui-field"><span class="pui-label">选择 .ipa / .zip 文件（最大 512 MB）</span><input id="package-file" class="pui-input" type="file" accept=".ipa,.zip" /></label>
+      <div class="pui-row"><button id="package-upload" type="button" class="pui-btn" disabled>上传并分析</button><button id="package-cancel" type="button" class="pui-btn" disabled>取消本次上传</button></div>
+      <p id="package-progress" class="pui-hint">文件通过 SDK 分片上传到插件容器，完成后创建静态分析任务；不会安装到设备。</p>
+    </section>
+
+    <section class="pui-card">
+      <div class="pui-card-head"><h2>任务记录</h2><button id="jobs-refresh" type="button" class="pui-btn" disabled>读取任务列表</button></div>
+      <div class="ios-table-wrap" tabindex="0" role="region" aria-label="任务记录，可横向滚动">
+        <table class="pui-table ios-jobs-table"><thead><tr><th scope="col">任务 ID</th><th scope="col">类型 / 应用</th><th scope="col">状态 / 阶段</th><th scope="col">操作</th></tr></thead><tbody id="jobs-body"></tbody></table>
+      </div>
+    </section>
+
+    <section class="pui-card">
+      <div class="pui-card-head"><h2>报告与产物预览</h2><button id="artifacts-refresh" type="button" class="pui-btn" disabled>读取产物列表</button></div>
+      <p class="pui-hint">通过宿主产物桥读取。仅预览不超过 1 MB 的文本；HTML 作为原文显示，不执行其中脚本。完整文件请在宿主插件产物页下载。</p>
+      <ul id="artifacts-list" class="pui-list ios-section"></ul>
+      <p id="artifact-name" class="pui-hint"></p>
+      <pre id="artifact-preview" class="pui-output ios-section">选择文本报告以预览。</pre>
+    </section>
+  </main>
+  <script src="./sdk.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
